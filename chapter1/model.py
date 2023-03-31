@@ -3,7 +3,7 @@ class Perceptron:
     Implementation of a perceptron, which is a single layer neural network.
     """
 
-    def __init__(self, dimensions: int):
+    def __init__(self, dimensions: int) -> None:
         """
         Initializes the perceptron.
         :param dimensions: number of dimensions of the perceptron, otherwise known as the number of weights or inputs
@@ -12,14 +12,14 @@ class Perceptron:
         self.bias: float = 0.0  # otherwise known as w0
         self.weights: list[float] = [0.0] * dimensions  # every input has a weight
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Returns a string representation of the perceptron.
         :return: string representation of the perceptron
         """
         return f"Perceptron(dimensions={self.dimensions})"
 
-    def predict(self, inputs: list[list[float]]):
+    def predict(self, inputs: list[list[float]]) -> list[int]:
         """
         Predicts the output of the perceptron for a given input.
         :param inputs: a list of inputs containing a list of values for each input
@@ -105,7 +105,7 @@ class LinearRegression:
     Implementation of a perceptron capable of doing linear regression.
     """
 
-    def __init__(self, dimensions: int):
+    def __init__(self, dimensions: int) -> None:
         """
         Initializes the perceptron.
         :param dimensions: number of dimensions of the perceptron, otherwise known as the number of weights or inputs
@@ -114,14 +114,14 @@ class LinearRegression:
         self.bias: float = 0.0  # otherwise known as w0
         self.weights: list[float] = [0.0] * dimensions  # every input has a weight
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Returns a string representation of the perceptron.
         :return: string representation of the perceptron
         """
         return f"LinearRegression(dimensions={self.dimensions})"
 
-    def predict(self, inputs: list[list[float]]):
+    def predict(self, inputs: list[list[float]]) -> list[float]:
         """
         Predicts the output of the perceptron for a given input.
         :param inputs: a list of inputs containing a list of values for each input
