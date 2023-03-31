@@ -98,3 +98,79 @@ class Perceptron:
                 self.partial_fit(inputs, targets)
                 # print the number of performed epochs
                 print(f"Finished after {epochs} epochs.")
+
+
+class LinearRegression:
+    """
+    Implementation of a perceptron capable of doing linear regression.
+    """
+
+    def __init__(self, dimensions: int):
+        """
+        Initializes the perceptron.
+        :param dimensions: number of dimensions of the perceptron, otherwise known as the number of weights or inputs
+        """
+        self.dimensions: int = dimensions
+        self.bias: float = 0.0  # otherwise known as w0
+        self.weights: list[float] = [0.0] * dimensions  # every input has a weight
+
+    def __repr__(self):
+        """
+        Returns a string representation of the perceptron.
+        :return: string representation of the perceptron
+        """
+        return f"LinearRegression(dimensions={self.dimensions})"
+
+    def predict(self, inputs: list[list[float]]):
+        """
+        Predicts the output of the perceptron for a given input.
+        :param inputs: a list of inputs containing a list of values for each input
+        :return: a list of predictions for each input
+        """
+        # Initialize a list to store the predictions
+        predictions: list[float] = []
+        # loop through list of inputs
+        for input in inputs:
+            # calculate the pre-activation value for every input
+            pre_activation: float = sum([value * weight for value, weight in zip(input, self.weights)]) + self.bias
+            # apply the activation function (identity) to the pre-activation value
+            post_activation: float = pre_activation
+            # append the prediction to the list of predictions
+            predictions.append(post_activation)
+
+        return predictions
+
+    def partial_fit(self, inputs, targets, *, alpha=0.01) -> None:
+        """
+        Partially fits the perceptron to the given inputs and targets.
+        :param alpha: the learning rate
+        :param inputs: a list of inputs containing a list of values for each input
+        :param targets: a list of target values for each input
+        """
+        # loop through the inputs and targets
+        for input, target in zip(inputs, targets):
+            # predict the output for the given input
+            prediction: float = self.predict([input])[0]
+            # calculate the error
+            error: float = prediction - target
+            # update the bias and weights if the error is not 0
+            if error != 0.0:
+                self.bias -= alpha * error
+                self.weights = [weight - (alpha * error) * value for weight, value in zip(self.weights, input)]
+
+    def fit(self, inputs, targets, *, alpha=0.01, epochs: int = 100) -> None:
+        """
+        Fully fits the perceptron to the given inputs and targets.
+        :param alpha: the learning rate
+        :param inputs: a list of inputs containing a list of values for each input
+        :param targets: a list of target values for each input
+        :param epochs: the number of epochs to train the perceptron for,
+                        if 0 the perceptron will train until it converges
+        :return:
+        """
+        # loop through the given number of epochs
+        for _ in range(epochs):
+            # train the perceptron for one epoch
+            self.partial_fit(inputs, targets, alpha=alpha)
+            # print the number of performed epochs
+        print(f"Finished after {epochs} epochs.")
