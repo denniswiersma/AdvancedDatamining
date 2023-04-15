@@ -1,3 +1,6 @@
+from typing import Callable
+
+
 class Perceptron:
     """
     Implementation of a perceptron, which is a single layer neural network.
@@ -249,3 +252,101 @@ def derivative(function: callable, delta: float = 0.01) -> callable:
     wrapper_derivative.__qualname__ = function.__qualname__ + "’"
 
     return wrapper_derivative
+
+
+class Neuron:
+    def __init__(
+        self,
+        dimensions: int,
+        activation: Callable[[float], float] = linear,
+        loss: Callable[[float, float], float] = mean_squared_error,
+    ) -> None:
+        """
+        Initializes the neuron.
+        :param dimensions: number of dimensions of the neuron, otherwise known as the number of weights or inputs
+        :param activation: the activation function
+        :param loss: the loss function
+        """
+        self.dimensions: int = dimensions
+        self.bias: float = 0.0  # otherwise known as w0
+        self.weights: list[float] = [0.0] * dimensions  # every input has a weight
+        self.activation: Callable[[float], float] = activation  # activation function
+        self.loss: Callable[[float, float], float] = loss  # loss function
+
+    def __repr__(self) -> str:
+        """
+        Returns a string representation of the neuron.
+        :return: string representation of the neuron
+        """
+        return f"Neuron(dimensions={self.dimensions}, activation={self.activation.__name__}, loss={self.loss.__name__})"
+
+    def predict(self, inputs: list[list[float]]) -> list[float]:
+        """
+        Predicts the output of the neuron for a given input.
+        :param inputs: a list of inputs containing a list of values for each input
+        :return: a list of predictions for each input
+        """
+        # Initialize a list to store the predictions
+        predictions: list[float] = []
+        # loop through list of inputs
+        for input in inputs:
+            # calculate the pre-activation value for every input
+            pre_activation: float = (
+                sum([value * weight for value, weight in zip(input, self.weights)])
+                + self.bias
+            )
+            # apply the activation function to the pre-activation value
+            post_activation: float = self.activation(pre_activation)
+            # append the prediction to the list of predictions
+            predictions.append(post_activation)
+
+        return predictions
+
+    def partial_fit(self, inputs, targets, *, alpha=0.01) -> None:
+        """
+        Partially fits the neuron to the given inputs and targets.
+        :param alpha: the learning rate
+        :param inputs: a list of inputs containing a list of values for each input
+        :param targets: a list of target values for each input
+        """
+        predictions: list[float] = self.predict(inputs)
+
+        # loop through the inputs, targets, and predictions
+        for input, target, prediction in zip(inputs, targets, predictions):
+            # calculate the pre-activation value for every input
+            pre_activation: float = (
+                sum([value * weight for value, weight in zip(input, self.weights)])
+                + self.bias
+            )
+
+            # update the bias
+            self.bias = self.bias - alpha * derivative(self.loss)(
+                prediction, target
+            ) * derivative(self.activation)(pre_activation)
+
+            # update the weights
+            self.weights = [
+                weight
+                - alpha
+                * derivative(self.loss)(prediction, target)
+                * derivative(self.activation)(pre_activation)
+                * value
+                for value, weight in zip(input, self.weights)
+            ]
+
+    def fit(self, inputs, targets, *, alpha=0.001, epochs: int = 100) -> None:
+        """
+        Fully fits the neuron to the given inputs and targets.
+        :param alpha: the learning rate
+        :param inputs: a list of inputs containing a list of values for each input
+        :param targets: a list of target values for each input
+        :param epochs: the number of epochs to train the perceptron for,
+                        if 0 the perceptron will train until it converges
+        :return:
+        """
+        # loop through the given number of epochs
+        for _ in range(epochs):
+            # train the perceptron for one epoch
+            self.partial_fit(inputs, targets, alpha=alpha)
+            # print the number of performed epochs
+        print(f"Finished after {epochs} epochs.")
