@@ -245,6 +245,16 @@ def mean_absolute_error(prediction: float, target: float):
     return abs(prediction - target)
 
 
+def hinge(prediction: float, target: float):
+    """
+    Calculates the hinge loss between the target and the prediction.
+    :param target: the target value
+    :param prediction: the prediction value
+    :return: the hinge loss
+    """
+    return max(1 - (prediction * target), 0)
+
+
 ### Derivative function ###
 def derivative(function: callable, delta: float = 0.01) -> callable:
     """
