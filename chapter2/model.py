@@ -220,3 +220,13 @@ def mean_squared_error(target: float, prediction: float):
     :return: the mean squared error
     """
     return (target - prediction) ** 2
+
+
+def mean_absolute_error(target: float, prediction: float):
+    """
+    Calculates the mean absolute error between the target and the prediction.
+    :param target: the target value
+    :param prediction: the prediction value
+    :return: the mean absolute error
+    """
+    return abs(target - prediction)
