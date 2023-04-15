@@ -209,3 +209,14 @@ def sign(pre_activation: float) -> int:
         return -1
     else:
         return 0
+
+
+### Loss functions ###
+def mean_squared_error(target: float, prediction: float):
+    """
+    Calculates the mean squared error between the target and the prediction.
+    :param target: the target value
+    :param prediction: the prediction value
+    :return: the mean squared error
+    """
+    return (target - prediction) ** 2
