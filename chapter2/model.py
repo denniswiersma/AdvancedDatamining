@@ -212,24 +212,24 @@ def sign(pre_activation: float) -> int:
 
 
 ### Loss functions ###
-def mean_squared_error(target: float, prediction: float):
+def mean_squared_error(prediction: float, target: float):
     """
     Calculates the mean squared error between the target and the prediction.
     :param target: the target value
     :param prediction: the prediction value
     :return: the mean squared error
     """
-    return (target - prediction) ** 2
+    return (prediction - target) ** 2
 
 
-def mean_absolute_error(target: float, prediction: float):
+def mean_absolute_error(prediction: float, target: float):
     """
     Calculates the mean absolute error between the target and the prediction.
     :param target: the target value
     :param prediction: the prediction value
     :return: the mean absolute error
     """
-    return abs(target - prediction)
+    return abs(prediction - target)
 
 
 ### Derivative function ###
