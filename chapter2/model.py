@@ -230,3 +230,22 @@ def mean_absolute_error(target: float, prediction: float):
     :return: the mean absolute error
     """
     return abs(target - prediction)
+
+
+### Derivative function ###
+def derivative(function: callable, delta: float = 0.01) -> callable:
+    """
+    Calculates the derivative of the given function.
+    :param function: the function to calculate the derivative of
+    :param delta: the delta to use for the derivative calculation
+    :return: the derivative of the given function
+    """
+
+    def wrapper_derivative(x, *args):
+        return (function(x + delta, *args) - function(x - delta, *args)) / (2 * delta)
+
+    # copy the name and qualname of the given function to the wrapper function
+    wrapper_derivative.__name__ = function.__name__ + "’"
+    wrapper_derivative.__qualname__ = function.__qualname__ + "’"
+
+    return wrapper_derivative
