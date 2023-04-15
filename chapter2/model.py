@@ -30,7 +30,10 @@ class Perceptron:
         # loop through list of inputs
         for input in inputs:
             # calculate the pre-activation value for every input
-            pre_activation: float = sum([value * weight for value, weight in zip(input, self.weights)]) + self.bias
+            pre_activation: float = (
+                sum([value * weight for value, weight in zip(input, self.weights)])
+                + self.bias
+            )
             # apply the activation function (signum) to the pre-activation value
             if pre_activation > 0:
                 predictions.append(1)
@@ -56,7 +59,9 @@ class Perceptron:
             # update the bias and weights if the error is not 0
             if error != 0.0:
                 self.bias -= error
-                self.weights = [weight - error * value for weight, value in zip(self.weights, input)]
+                self.weights = [
+                    weight - error * value for weight, value in zip(self.weights, input)
+                ]
 
     def fit(self, inputs, targets, *, epochs: int = 0) -> None:
         """
@@ -132,7 +137,10 @@ class LinearRegression:
         # loop through list of inputs
         for input in inputs:
             # calculate the pre-activation value for every input
-            pre_activation: float = sum([value * weight for value, weight in zip(input, self.weights)]) + self.bias
+            pre_activation: float = (
+                sum([value * weight for value, weight in zip(input, self.weights)])
+                + self.bias
+            )
             # apply the activation function (identity) to the pre-activation value
             post_activation: float = pre_activation
             # append the prediction to the list of predictions
@@ -156,7 +164,10 @@ class LinearRegression:
             # update the bias and weights if the error is not 0
             if error != 0.0:
                 self.bias -= alpha * error
-                self.weights = [weight - (alpha * error) * value for weight, value in zip(self.weights, input)]
+                self.weights = [
+                    weight - (alpha * error) * value
+                    for weight, value in zip(self.weights, input)
+                ]
 
     def fit(self, inputs, targets, *, alpha=0.01, epochs: int = 100) -> None:
         """
