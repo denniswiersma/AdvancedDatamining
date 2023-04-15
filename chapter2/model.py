@@ -185,3 +185,13 @@ class LinearRegression:
             self.partial_fit(inputs, targets, alpha=alpha)
             # print the number of performed epochs
         print(f"Finished after {epochs} epochs.")
+
+
+### Activation functions ###
+def linear(pre_activation: float) -> float:
+    """
+    Applies the linear activation function to the given pre-activation value.
+    :param pre_activation: the pre-activation value
+    :return: the post-activation value
+    """
+    return pre_activation
