@@ -1,3 +1,4 @@
+import math
 from typing import Callable
 
 
@@ -212,6 +213,15 @@ def sign(pre_activation: float) -> int:
         return -1
     else:
         return 0
+
+
+def tanh(pre_activation: float) -> float:
+    """
+    Applies the hyperbolic tangent activation function to the given pre-activation value.
+    :param pre_activation: the pre-activation value
+    :return: the post-activation value
+    """
+    return math.tanh(pre_activation)
 
 
 ### Loss functions ###
