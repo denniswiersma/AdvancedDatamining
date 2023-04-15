@@ -195,3 +195,17 @@ def linear(pre_activation: float) -> float:
     :return: the post-activation value
     """
     return pre_activation
+
+
+def sign(pre_activation: float) -> int:
+    """
+    Applies the signum activation function to the given pre-activation value.
+    :param pre_activation: the pre-activation value
+    :return: the post-activation value
+    """
+    if pre_activation > 0:
+        return 1
+    elif pre_activation < 0:
+        return -1
+    else:
+        return 0
