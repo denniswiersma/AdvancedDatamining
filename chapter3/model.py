@@ -272,6 +272,10 @@ def derivative(function: callable, delta: float = 0.01) -> callable:
 
 
 class Neuron:
+    """
+    Implementation of a single neuron.
+    """
+
     def __init__(
         self,
         dimensions: int,
