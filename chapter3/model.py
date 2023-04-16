@@ -1,4 +1,6 @@
 import math
+from collections import Counter
+from copy import deepcopy
 from typing import Callable
 
 
@@ -369,3 +371,101 @@ class Neuron:
             self.partial_fit(inputs, targets, alpha=alpha)
             # print the number of performed epochs
         print(f"Finished after {epochs} epochs.")
+
+
+class Layer:
+    """
+    Implementation of a layer of neurons.
+    """
+
+    # Counter to keep track of the number of layers of each type
+    class_counter = Counter()
+
+    def __init__(self, outputs: int, *, name: str = None, next: "Layer" = None) -> None:
+        """
+        Initializes the layer.
+        :param outputs: the number of outputs of the layer, otherwise known as the number of neurons
+        :param name: the name of the layer
+        :param next: the next layer in the network
+        """
+        # increment the counter for the current layer type
+        Layer.class_counter[type(self)] += 1
+        # if no name is given, use the default name
+        if name is None:
+            name = f"{type(self).__name__}_{Layer.class_counter[type(self)]}"
+
+        self.inputs: int = 0  # number of inputs of the layer
+        self.outputs: int = outputs  # number of outputs of the layer
+        self.name: str = name  # name of the layer
+        self.next: "Layer" = next  # the next layer in the network
+
+    def __repr__(self) -> str:
+        """
+        Returns a string representation of the layer.
+        :return: string representation of the layer
+        """
+        text = f"Layer(inputs={self.inputs}, outputs={self.outputs}, name={repr(self.name)})"
+        # if the layer has a next layer, add it to the string representation
+        if self.next is not None:
+            text += " + " + repr(self.next)
+        return text
+
+    def __getitem__(self, index: int | str) -> "Layer":
+        """
+        Returns the layer at the given index.
+        :param index: the index of the layer
+        :return: the layer at the given index
+        """
+        # if the index is 0 or the name of the layer, return the layer
+        if index == 0 or index == self.name:
+            return self
+
+        # if the index is an integer, return the layer at the given index
+        if isinstance(index, int):
+            if self.next is None:
+                raise IndexError("Layer index out of range")
+            return self.next[index - 1]
+
+        # if the index is a string, return the layer with the given name
+        if isinstance(index, str):
+            if self.next is None:
+                raise KeyError(index)
+            return self.next[index]
+
+        # if the index is neither an integer nor a string, raise an error
+        raise TypeError(
+            f"Layer indices must be integers or strings, not {type(index).__name__}"
+        )
+
+    def __add__(self, next: "Layer") -> "Layer":
+        """
+        Adds a layer to the network. This method is called when using the + operator.
+        :param next: the next layer in the network
+        :return: a copy of the current layer with the given layer added
+        """
+        # create a copy of the current layer
+        result = deepcopy(self)
+        # add the given layer to the copy
+        result.add(deepcopy(next))
+        return result
+
+    def add(self, next: "Layer") -> None:
+        """
+        Adds a layer to the network.
+        :param next: the next layer in the network
+        """
+        # if the layer has no next layer, add the given layer as the next layer
+        if self.next is None:
+            self.next = next
+            # set the number of inputs of the next layer to the number of outputs of the current layer
+            next.set_inputs(self.outputs)
+        # if the layer has a next layer, add the given layer to the next layer
+        else:
+            self.next.add(next)
+
+    def set_inputs(self, inputs: int) -> None:
+        """
+        Sets the number of inputs of the layer.
+        :param inputs: the number of inputs of the layer
+        """
+        self.inputs = inputs
