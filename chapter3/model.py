@@ -441,8 +441,11 @@ class Layer:
         )
 
     def __call__(
-        self, layer_inputs: list[list[float]], targets: list[list[float]] = None
-    ) -> tuple[list[list[float]], list[float]]:
+        self,
+        layer_inputs: list[list[float]],
+        targets: list[list[float]] = None,
+        alpha: float = None,
+    ) -> tuple[list[list[float]], list[float], list[list[[float]]]]:
         """
         Calls the layer.
         :param layer_inputs: the inputs of the layer
@@ -501,15 +504,18 @@ class InputLayer(Layer):
         return text
 
     def __call__(
-        self, layer_inputs: list[list[float]], targets: list[list[float]] = None
-    ) -> tuple[list[list[float]], list[float]]:
+        self,
+        layer_inputs: list[list[float]],
+        targets: list[list[float]] = None,
+        alpha: float = None,
+    ) -> tuple[list[list[float]], list[float], list[list[float]]]:
         """
         Calls the input layer.
         :param layer_inputs: the inputs of the layer
         :param targets: the expected outcomes of the network
         :return: the outputs of the input layer
         """
-        return self.next(layer_inputs, targets)
+        return self.next(layer_inputs, targets, alpha)
 
     def predict(self, layer_inputs: list[list[float]]) -> list[list[float]]:
         """
@@ -517,7 +523,7 @@ class InputLayer(Layer):
         :param layer_inputs: the inputs of the input layer
         :return: the outputs of the input layer
         """
-        prediction, _ = self(layer_inputs)
+        prediction, _, _ = self(layer_inputs)
         return prediction
 
     def evaluate(
@@ -529,9 +535,34 @@ class InputLayer(Layer):
         :param targets: the expected outcomes of the network
         :return: the loss of the input layer
         """
-        _, losses = self(layer_inputs, targets)
+        _, losses, _ = self(layer_inputs, targets)
         mean_loss = sum(losses) / len(losses)
         return mean_loss
+
+    def partial_fit(self, inputs, targets, alpha=0.001) -> None:
+        """
+        Partially fits the input layer to the given inputs and targets.
+        :param inputs: a list of inputs containing a list of values for each input
+        :param targets: a list of target values for each input
+        :param alpha: the learning rate
+        """
+        self(inputs, targets, alpha)
+
+    def fit(self, inputs, targets, *, alpha=0.001, epochs: int = 100) -> None:
+        """
+        Fully fits the neuron to the given inputs and targets.
+        :param alpha: the learning rate
+        :param inputs: a list of inputs containing a list of values for each input
+        :param targets: a list of target values for each input
+        :param epochs: the number of epochs to train the neuron for
+        """
+        # loop through the given number of epochs
+        for epoch in range(epochs):
+            # train the perceptron for one epoch
+            self.partial_fit(inputs, targets, alpha=alpha)
+
+            # print the number of performed epochs
+        print(f"Finished after {epochs} epochs.")
 
     def set_inputs(self, inputs: int) -> None:
         """
@@ -572,8 +603,11 @@ class DenseLayer(Layer):
         return text
 
     def __call__(
-        self, layer_inputs: list[list[float]], targets: list[list[float]] = None
-    ) -> tuple[list[list[float]], list[float]]:
+        self,
+        layer_inputs: list[list[float]],
+        targets: list[list[float]] = None,
+        alpha: float = None,
+    ) -> tuple[list[list[float]], list[float], list[list[float]]]:
         """
         Calls the dense layer.
         :param layer_inputs: the inputs of the layer
@@ -582,6 +616,7 @@ class DenseLayer(Layer):
         """
         # initialise the list of pre-activations of all neurons in the layer
         layer_pre_activations = []
+        gradients: list[list[float]] | None = None
         # for each neuron in the layer
         for neuron_inputs in layer_inputs:
             # initialise the list of pre-activations of the neuron
@@ -602,12 +637,48 @@ class DenseLayer(Layer):
             layer_pre_activations.append(neuron_pre_activations)
 
         # pass the pre-activations to the next layer
-        predictions, losses = self.next(
-            layer_pre_activations,
-            targets,
+        predictions, losses, received_gradients = self.next(
+            layer_pre_activations, targets=targets, alpha=alpha
         )
 
-        return predictions, losses
+        # if alpha is not None
+        if alpha is not None:
+            # initialise the list of gradients of the layer
+            gradients = []
+
+            # for each neuron in the layer and its received gradients
+            for neuron_inputs, received_gradient in zip(
+                layer_inputs, received_gradients
+            ):
+                # calculate the gradient for each input of the neuron
+                gradient = [
+                    sum(
+                        self.weights[output][input] * received_gradient[output]
+                        for output in range(self.outputs)
+                    )
+                    for input in range(self.inputs)
+                ]
+
+                # add the gradient to the list of gradients of the layer
+                gradients.append(gradient)
+
+                # update the weights and biases of the neurons
+                for output in range(self.outputs):
+                    # update the bias of the neuron
+                    self.bias[output] -= (
+                        alpha / len(layer_inputs)
+                    ) * received_gradient[output]
+
+                    # update the weights of the neurons
+                    self.weights[output] = [
+                        self.weights[output][input]
+                        - (alpha / len(layer_inputs))
+                        * received_gradient[output]
+                        * neuron_inputs[input]
+                        for input in range(self.inputs)
+                    ]
+
+        return predictions, losses, gradients
 
     def set_inputs(self, inputs: int) -> None:
         """
@@ -661,8 +732,11 @@ class ActivationLayer(Layer):
         return text
 
     def __call__(
-        self, layer_inputs: list[list[float]], targets: list[list[float]] = None
-    ) -> tuple[list[list[float]], list[float]]:
+        self,
+        layer_inputs: list[list[float]],
+        targets: list[list[float]] = None,
+        alpha: float = None,
+    ) -> tuple[list[list[float]], list[float], list[list[[float]]] | None]:
         """
         Calls the activation layer.
         :param layer_inputs: the inputs of the layer
@@ -670,6 +744,7 @@ class ActivationLayer(Layer):
         """
         # initialise the list of post-activations of all neurons in the layer
         layer_post_activations = []
+        gradients: list[list[float]] | None = None
         # for each list of pre-activations for each neuron in the layer
         for neuron_pre_activations in layer_inputs:
             # initialise the list of post-activations of the neuron
@@ -684,9 +759,32 @@ class ActivationLayer(Layer):
             layer_post_activations.append(neuron_post_activations)
 
         # pass the activations to the next layer
-        predictions, losses = self.next(layer_post_activations, targets)
+        predictions, losses, received_gradients = self.next(
+            layer_post_activations,
+            targets=targets,
+            alpha=alpha,
+        )
 
-        return predictions, losses
+        # if alpha is not None
+        if alpha is not None:
+            # initialise the list of gradients
+            gradients = []
+
+            # for each list of pre-activations for each neuron in the layer and each list of received gradients
+            for neuron_pre_activation, received_gradient in zip(
+                layer_inputs, received_gradients
+            ):
+                # calculate the gradient
+                gradient: list[float] = [
+                    derivative(self.activation)(neuron_pre_activation[output])
+                    * received_gradient[output]
+                    for output in range(self.outputs)
+                ]
+
+                # add the gradient to the list of gradients
+                gradients.append(gradient)
+
+        return predictions, losses, gradients
 
 
 class LossLayer(Layer):
@@ -719,8 +817,11 @@ class LossLayer(Layer):
         return text
 
     def __call__(
-        self, layer_inputs: list[list[float]], targets: list[list[float]] = None
-    ) -> tuple[list[list[float]], list[float]]:
+        self,
+        layer_inputs: list[list[float]],
+        targets: list[list[float]] = None,
+        alpha: float = None,
+    ) -> tuple[list[list[float]], list[float], list[list[float]]]:
         """
         Calls the loss layer.
         :param layer_inputs: the inputs of the layer which, in this case, are the predictions
@@ -728,8 +829,11 @@ class LossLayer(Layer):
         :return: the outputs of the layer
         """
         predictions = layer_inputs
-        losses = []
+        losses = None
+        gradients = None
+
         if targets is not None:
+            losses = []
             # for each prediction and target
             for prediction, target in zip(predictions, targets):
                 # calculate the loss
@@ -740,7 +844,18 @@ class LossLayer(Layer):
                 # add the loss to the list of losses
                 losses.append(loss)
 
-        return predictions, losses
+            # if alpha is not None, calculate the gradient
+            if alpha is not None:
+                gradients = []
+                for prediction, target in zip(predictions, targets):
+                    gradient = [
+                        derivative(self.loss)(prediction[output], target[output])
+                        for output in range(self.inputs)
+                    ]
+                    # add the gradient to the list of gradients
+                    gradients.append(gradient)
+
+        return predictions, losses, gradients
 
     def add(self, next: "Layer") -> None:
         """
