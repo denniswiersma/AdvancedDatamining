@@ -440,6 +440,16 @@ class Layer:
             f"Layer indices must be integers or strings, not {type(index).__name__}"
         )
 
+    def __call__(
+        self, layer_inputs: list[list[float]], targets: list[list[float]] = None
+    ) -> tuple[list[list[float]], list[float]]:
+        """
+        Calls the layer.
+        :param layer_inputs: the inputs of the layer
+        :return: the outputs of the layer
+        """
+        raise NotImplementedError("Abstract __call__ method called")
+
     def __add__(self, next: "Layer") -> "Layer":
         """
         Adds a layer to the network. This method is called when using the + operator.
@@ -490,6 +500,39 @@ class InputLayer(Layer):
             text += " + " + repr(self.next)
         return text
 
+    def __call__(
+        self, layer_inputs: list[list[float]], targets: list[list[float]] = None
+    ) -> tuple[list[list[float]], list[float]]:
+        """
+        Calls the input layer.
+        :param layer_inputs: the inputs of the layer
+        :param targets: the expected outcomes of the network
+        :return: the outputs of the input layer
+        """
+        return self.next(layer_inputs, targets)
+
+    def predict(self, layer_inputs: list[list[float]]) -> list[list[float]]:
+        """
+        Predicts the outputs of the input layer which, by definition, are the same as the inputs.
+        :param layer_inputs: the inputs of the input layer
+        :return: the outputs of the input layer
+        """
+        prediction, _ = self(layer_inputs)
+        return prediction
+
+    def evaluate(
+        self, layer_inputs: list[list[float]], targets: list[list[float]]
+    ) -> float:
+        """
+        Evaluates the input layer.
+        :param layer_inputs: the inputs of the input layer
+        :param targets: the expected outcomes of the network
+        :return: the loss of the input layer
+        """
+        _, losses = self(layer_inputs, targets)
+        mean_loss = sum(losses) / len(losses)
+        return mean_loss
+
     def set_inputs(self, inputs: int) -> None:
         """
         Sets the number of inputs of the layer.
@@ -527,6 +570,44 @@ class DenseLayer(Layer):
         if self.next is not None:
             text += " + " + repr(self.next)
         return text
+
+    def __call__(
+        self, layer_inputs: list[list[float]], targets: list[list[float]] = None
+    ) -> tuple[list[list[float]], list[float]]:
+        """
+        Calls the dense layer.
+        :param layer_inputs: the inputs of the layer
+        :param targets: the expected outcomes of the network
+        :return: the outputs of the layer
+        """
+        # initialise the list of pre-activations of all neurons in the layer
+        layer_pre_activations = []
+        # for each neuron in the layer
+        for neuron_inputs in layer_inputs:
+            # initialise the list of pre-activations of the neuron
+            neuron_pre_activations = []
+            # for each output of the neuron
+            for output in range(self.outputs):
+                # calculate the pre-activation of the neuron
+                pre_activation = (
+                    sum(
+                        neuron_inputs[input] * self.weights[output][input]
+                        for input in range(self.inputs)
+                    )
+                    + self.bias[output]
+                )
+                # add the pre-activation to the list of pre-activations of the neuron
+                neuron_pre_activations.append(pre_activation)
+            # add the list of pre-activations of the neuron to the list of pre-activations of all neurons in the layer
+            layer_pre_activations.append(neuron_pre_activations)
+
+        # pass the pre-activations to the next layer
+        predictions, losses = self.next(
+            layer_pre_activations,
+            targets,
+        )
+
+        return predictions, losses
 
     def set_inputs(self, inputs: int) -> None:
         """
@@ -570,11 +651,42 @@ class ActivationLayer(Layer):
         Returns a string representation of the activation layer.
         :return: string representation of the activation layer
         """
-        text = f"ActivationLayer(inputs={self.inputs}, outputs={self.outputs}, activation={self.activation.__name__}, name={repr(self.name)})"
+        text = (
+            f"ActivationLayer(inputs={self.inputs}, outputs={self.outputs}, activation={self.activation.__name__},"
+            f" name={repr(self.name)})"
+        )
         # if the layer has a next layer, add it to the string representation
         if self.next is not None:
             text += " + " + repr(self.next)
         return text
+
+    def __call__(
+        self, layer_inputs: list[list[float]], targets: list[list[float]] = None
+    ) -> tuple[list[list[float]], list[float]]:
+        """
+        Calls the activation layer.
+        :param layer_inputs: the inputs of the layer
+        :return: the outputs of the layer
+        """
+        # initialise the list of post-activations of all neurons in the layer
+        layer_post_activations = []
+        # for each list of pre-activations for each neuron in the layer
+        for neuron_pre_activations in layer_inputs:
+            # initialise the list of post-activations of the neuron
+            neuron_post_activations = []
+            # for each output of the neuron
+            for output in range(self.outputs):
+                # calculate the post-activation of the neuron
+                post_activation = self.activation(neuron_pre_activations[output])
+                # add the post-activation to the list of post-activations of the neuron
+                neuron_post_activations.append(post_activation)
+            # add the list of post-activations of the neuron to the list of post-activations of all neurons in the layer
+            layer_post_activations.append(neuron_post_activations)
+
+        # pass the activations to the next layer
+        predictions, losses = self.next(layer_post_activations, targets)
+
+        return predictions, losses
 
 
 class LossLayer(Layer):
@@ -605,6 +717,30 @@ class LossLayer(Layer):
         if self.next is not None:
             text += " + " + repr(self.next)
         return text
+
+    def __call__(
+        self, layer_inputs: list[list[float]], targets: list[list[float]] = None
+    ) -> tuple[list[list[float]], list[float]]:
+        """
+        Calls the loss layer.
+        :param layer_inputs: the inputs of the layer which, in this case, are the predictions
+        :param targets: the expected outcomes of the network
+        :return: the outputs of the layer
+        """
+        predictions = layer_inputs
+        losses = []
+        if targets is not None:
+            # for each prediction and target
+            for prediction, target in zip(predictions, targets):
+                # calculate the loss
+                loss = sum(
+                    self.loss(prediction[output], target[output])
+                    for output in range(self.inputs)  # self.inputs == self.outputs
+                )
+                # add the loss to the list of losses
+                losses.append(loss)
+
+        return predictions, losses
 
     def add(self, next: "Layer") -> None:
         """
