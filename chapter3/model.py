@@ -1,4 +1,5 @@
 import math
+import random
 from collections import Counter
 from copy import deepcopy
 from typing import Callable
@@ -381,7 +382,9 @@ class Layer:
     # Counter to keep track of the number of layers of each type
     class_counter = Counter()
 
-    def __init__(self, outputs: int, *, name: str = None, next: "Layer" = None) -> None:
+    def __init__(
+        self, outputs: int | None, *, name: str = None, next: "Layer" = None
+    ) -> None:
         """
         Initializes the layer.
         :param outputs: the number of outputs of the layer, otherwise known as the number of neurons
@@ -395,7 +398,7 @@ class Layer:
             name = f"{type(self).__name__}_{Layer.class_counter[type(self)]}"
 
         self.inputs: int = 0  # number of inputs of the layer
-        self.outputs: int = outputs  # number of outputs of the layer
+        self.outputs: int | None = outputs  # number of outputs of the layer
         self.name: str = name  # name of the layer
         self.next: "Layer" = next  # the next layer in the network
 
@@ -469,3 +472,143 @@ class Layer:
         :param inputs: the number of inputs of the layer
         """
         self.inputs = inputs
+
+
+class InputLayer(Layer):
+    """
+    Implementation of an input layer.
+    """
+
+    def __repr__(self) -> str:
+        """
+        Returns a string representation of the input layer.
+        :return: string representation of the input layer
+        """
+        text = f"InputLayer(outputs={self.outputs}, name={repr(self.name)})"
+        # if the layer has a next layer, add it to the string representation
+        if self.next is not None:
+            text += " + " + repr(self.next)
+        return text
+
+    def set_inputs(self, inputs: int) -> None:
+        """
+        Sets the number of inputs of the layer.
+        :param inputs: the number of inputs of the layer
+        """
+        raise NotImplementedError(
+            "Input layer cannot receive inputs from another layer"
+        )
+
+
+class DenseLayer(Layer):
+    """
+    Implementation of a densely connected layer of neurons.
+    """
+
+    def __init__(self, outputs: int, *, name: str = None, next: "Layer" = None) -> None:
+        """
+        Initializes the dense layer.
+        :param outputs: the number of outputs of the layer, otherwise known as the number of neurons
+        :param name: the name of the layer
+        :param next: the next layer in the network
+        """
+        # call the constructor of the super class
+        super().__init__(outputs, name=name, next=next)
+        self.bias: list[float] = [0.0] * outputs  # biases of the neurons
+        self.weights: list[list[float]] | None = None  # weights of the neurons
+
+    def __repr__(self) -> str:
+        """
+        Returns a string representation of the dense layer.
+        :return: string representation of the dense layer
+        """
+        text = f"DenseLayer(inputs={self.inputs}, outputs={self.outputs}, name={repr(self.name)})"
+        # if the layer has a next layer, add it to the string representation
+        if self.next is not None:
+            text += " + " + repr(self.next)
+        return text
+
+    def set_inputs(self, inputs: int) -> None:
+        """
+        Sets the number of inputs of the layer and initializes the weights.
+        :param inputs: the number of inputs of the layer
+        """
+        self.inputs = inputs
+        xavier = math.sqrt(6 / (inputs + self.outputs))
+        if self.weights is None:
+            self.weights = [
+                [random.uniform(-xavier, xavier) for _ in range(inputs)]
+                for _ in range(self.outputs)
+            ]
+
+
+class ActivationLayer(Layer):
+    """
+    Implementation of an activation layer.
+    """
+
+    def __init__(
+        self,
+        outputs: int,
+        activation: Callable[[float], float] = linear,
+        *,
+        name: str = None,
+        next: "Layer" = None,
+    ) -> None:
+        """
+        Initializes the activation layer.
+        :param activation: the activation function
+        :param name: the name of the layer
+        :param next: the next layer in the network
+        """
+        # call the constructor of the super class
+        super().__init__(outputs=outputs, name=name, next=next)
+        self.activation: Callable[[float], float] = activation
+
+    def __repr__(self) -> str:
+        """
+        Returns a string representation of the activation layer.
+        :return: string representation of the activation layer
+        """
+        text = f"ActivationLayer(inputs={self.inputs}, outputs={self.outputs}, activation={self.activation.__name__}, name={repr(self.name)})"
+        # if the layer has a next layer, add it to the string representation
+        if self.next is not None:
+            text += " + " + repr(self.next)
+        return text
+
+
+class LossLayer(Layer):
+    """Implementation of a loss layer."""
+
+    def __init__(
+        self,
+        loss: Callable[[float, float], float] = mean_squared_error,
+        *,
+        name: str = None,
+    ) -> None:
+        """
+        Initializes the loss layer.
+        :param loss: the loss function
+        :param name: the name of the layer
+        """
+        # call the constructor of the super class
+        super().__init__(outputs=None, name=name)
+        self.loss: Callable[[float, float], float] = loss
+
+    def __repr__(self) -> str:
+        """
+        Returns a string representation of the loss layer.
+        :return: string representation of the loss layer
+        """
+        text = f"LossLayer(inputs={self.inputs}, loss={self.loss.__name__}, name={repr(self.name)})"
+        # if the layer has a next layer, add it to the string representation
+        if self.next is not None:
+            text += " + " + repr(self.next)
+        return text
+
+    def add(self, next: "Layer") -> None:
+        """
+        Adds a layer to the network.
+        :param next: the next layer in the network
+        """
+        raise NotImplementedError("Loss layers cannot have a next layer.")
