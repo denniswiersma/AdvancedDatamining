@@ -74,7 +74,6 @@ class Perceptron:
         :param targets: a list of target values for each input
         :param epochs: the number of epochs to train the perceptron for,
                         if 0 the perceptron will train until it converges
-        :return:
         """
         # if epochs is 0, train until convergence
         if epochs == 0:
@@ -179,9 +178,7 @@ class LinearRegression:
         :param alpha: the learning rate
         :param inputs: a list of inputs containing a list of values for each input
         :param targets: a list of target values for each input
-        :param epochs: the number of epochs to train the perceptron for,
-                        if 0 the perceptron will train until it converges
-        :return:
+        :param epochs: the number of epochs to train the perceptron for
         """
         # loop through the given number of epochs
         for _ in range(epochs):
@@ -360,9 +357,7 @@ class Neuron:
         :param alpha: the learning rate
         :param inputs: a list of inputs containing a list of values for each input
         :param targets: a list of target values for each input
-        :param epochs: the number of epochs to train the perceptron for,
-                        if 0 the perceptron will train until it converges
-        :return:
+        :param epochs: the number of epochs to train the neuron for
         """
         # loop through the given number of epochs
         for _ in range(epochs):
