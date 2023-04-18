@@ -285,6 +285,39 @@ def hinge(prediction: float, target: float):
     return max(1 - (prediction * target), 0)
 
 
+# Support function for the cross-entropy functions
+def pseudo_log(x, epsilon: float = 0.0001):
+    """
+    Calculates the pseudo logarithm of the given value if it is smaller than the given epsilon.
+    :param x: the value to calculate the pseudo logarithm of
+    :param epsilon: the epsilon to use for the calculation
+    :return: the pseudo logarithm of the given value
+    """
+    if x < epsilon:
+        return math.log(epsilon) + (x - epsilon) / epsilon
+    return math.log(x)
+
+
+def categorical_crossentropy(prediction: float, target: float):
+    """
+    Calculates the categorical cross-entropy between the target and the prediction.
+    :param target: the target value
+    :param prediction: the prediction value
+    :return: the categorical cross-entropy
+    """
+    return -target * pseudo_log(prediction)
+
+
+def binary_crossentropy(prediction: float, target: float):
+    """
+    Calculates the binary cross-entropy between the target and the prediction.
+    :param target: the target value
+    :param prediction: the prediction value
+    :return: the binary cross-entropy
+    """
+    return -target * pseudo_log(prediction) - (1 - target) * pseudo_log(1 - prediction)
+
+
 ### Derivative function ###
 def derivative(function: callable, delta: float = 0.01) -> callable:
     """
