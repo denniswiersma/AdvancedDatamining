@@ -233,6 +233,27 @@ def softsign(pre_activation: float) -> float:
     return pre_activation / (1 + abs(pre_activation))
 
 
+def softmax(pre_activation: list[float]) -> list[float]:
+    """
+    Applies the softmax activation function to the given pre-activation value.
+    :param pre_activation: the pre-activation value
+    :return: the post-activation value
+    """
+    # Calculate the maximum value of the pre-activation vector
+    max_value: float = max(pre_activation)
+
+    # Calculate the normalised pre-activation vector
+    normalised_pre_activation: list[float] = [
+        value - max_value for value in pre_activation
+    ]
+
+    # Calculate the sum of exponentials (denominator) once
+    denominator = sum(math.exp(value) for value in normalised_pre_activation)
+
+    # Calculate the softmax values using the normalized input vector and the pre-calculated denominator
+    return [math.exp(value) / denominator for value in normalised_pre_activation]
+
+
 ### Loss functions ###
 def mean_squared_error(prediction: float, target: float):
     """
@@ -791,6 +812,88 @@ class ActivationLayer(Layer):
                     derivative(self.activation)(neuron_pre_activation[output])
                     * received_gradient[output]
                     for output in range(self.outputs)
+                ]
+
+                # add the gradient to the list of gradients
+                gradients.append(gradient)
+
+        return predictions, losses, gradients
+
+
+class SoftmaxLayer(Layer):
+    """
+    Implementation of a softmax layer.
+    """
+
+    def __init__(
+        self,
+        outputs: int,
+        *,
+        name: str = None,
+        next: "Layer" = None,
+    ) -> None:
+        """
+        Initializes the softmax layer.
+        :param name: the name of the layer
+        :param next: the next layer in the network
+        """
+        # call the constructor of the super class
+        super().__init__(outputs=outputs, name=name, next=next)
+
+    def __repr__(self) -> str:
+        """
+        Returns a string representation of the softmax layer.
+        :return: string representation of the softmax layer
+        """
+        text: str = f"SoftmaxLayer(inputs={self.inputs}, outputs={self.outputs}, name={repr(self.name)})"
+        # if the layer has a next layer, add it to the string representation
+        if self.next is not None:
+            text += " + " + repr(self.next)
+        return text
+
+    def __call__(
+        self,
+        layer_inputs: list[list[float]],
+        targets: list[list[float]] = None,
+        alpha: float = None,
+    ) -> tuple[list[list[float]], list[float], list[list[[float]]] | None]:
+        """
+        Calls the softmax layer.
+        :param layer_inputs: the inputs of the layer
+        :return: the outputs of the layer
+        """
+        # initialise the list of post-activations of all neurons in the layer
+        layer_softmax_outputs: list[list[float]] = []
+        gradients: list[list[float]] | None = None
+        # for each list of pre-activations for each neuron in the layer
+        for neuron_post_activations in layer_inputs:
+            neuron_softmax_outputs: list[float] = softmax(neuron_post_activations)
+            # add the list of post-activations of the neuron to the list of post-activations of all neurons in the layer
+            layer_softmax_outputs.append(neuron_softmax_outputs)
+
+        # pass the activations to the next layer
+        predictions, losses, received_gradients = self.next(
+            layer_softmax_outputs,
+            targets=targets,
+            alpha=alpha,
+        )
+
+        # if alpha is not None
+        if alpha is not None:
+            # initialise the list of gradients
+            gradients: list[list[float]] = []
+
+            # for each list of predictions for each neuron in the layer and each list of received gradients
+            for prediction, received_gradient in zip(predictions, received_gradients):
+                # calculate the gradient
+                gradient: list[float] = [
+                    sum(
+                        received_gradient[output]
+                        * prediction[output]
+                        * ((input == output) - prediction[input])
+                        for output in range(self.outputs)
+                    )
+                    for input in range(self.inputs)
                 ]
 
                 # add the gradient to the list of gradients
