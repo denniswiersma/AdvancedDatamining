@@ -263,13 +263,17 @@ def sigmoid(pre_activation: float) -> float:
     return 1 / (1 + pseudo_log(-pre_activation))
 
 
-def softplus(pre_activation: float) -> float:
+def softplus(pre_activation: float, limit: int = 20) -> float:
     """
     Applies the softplus activation function to the given pre-activation value.
     :param pre_activation: the pre-activation value
+    :param limit: this will prevent the function from causing an overflow by limiting the value of the pre-activation
     :return: the post-activation value
     """
-    return pseudo_log(1 + pseudo_log(pre_activation))
+    if pre_activation > limit:
+        return pre_activation
+    else:
+        return math.log(1 + math.exp(pre_activation))
 
 
 def relu(pre_activation: float) -> float:
