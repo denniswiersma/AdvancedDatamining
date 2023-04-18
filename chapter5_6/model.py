@@ -2,7 +2,7 @@ import math
 import random
 from collections import Counter
 from copy import deepcopy
-from typing import Callable, Dict
+from typing import Callable
 
 
 class Perceptron:
