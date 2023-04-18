@@ -380,7 +380,7 @@ class Layer:
     """
 
     # Counter to keep track of the number of layers of each type
-    class_counter = Counter()
+    class_counter: Counter = Counter()
 
     def __init__(
         self, outputs: int | None, *, name: str = None, next: "Layer" = None
@@ -407,7 +407,7 @@ class Layer:
         Returns a string representation of the layer.
         :return: string representation of the layer
         """
-        text = f"Layer(inputs={self.inputs}, outputs={self.outputs}, name={repr(self.name)})"
+        text: str = f"Layer(inputs={self.inputs}, outputs={self.outputs}, name={repr(self.name)})"
         # if the layer has a next layer, add it to the string representation
         if self.next is not None:
             text += " + " + repr(self.next)
@@ -460,7 +460,7 @@ class Layer:
         :return: a copy of the current layer with the given layer added
         """
         # create a copy of the current layer
-        result = deepcopy(self)
+        result: "Layer" = deepcopy(self)
         # add the given layer to the copy
         result.add(deepcopy(next))
         return result
@@ -484,7 +484,7 @@ class Layer:
         Sets the number of inputs of the layer.
         :param inputs: the number of inputs of the layer
         """
-        self.inputs = inputs
+        self.inputs: int = inputs
 
 
 class InputLayer(Layer):
@@ -497,7 +497,7 @@ class InputLayer(Layer):
         Returns a string representation of the input layer.
         :return: string representation of the input layer
         """
-        text = f"InputLayer(outputs={self.outputs}, name={repr(self.name)})"
+        text: str = f"InputLayer(outputs={self.outputs}, name={repr(self.name)})"
         # if the layer has a next layer, add it to the string representation
         if self.next is not None:
             text += " + " + repr(self.next)
@@ -596,7 +596,7 @@ class DenseLayer(Layer):
         Returns a string representation of the dense layer.
         :return: string representation of the dense layer
         """
-        text = f"DenseLayer(inputs={self.inputs}, outputs={self.outputs}, name={repr(self.name)})"
+        text: str = f"DenseLayer(inputs={self.inputs}, outputs={self.outputs}, name={repr(self.name)})"
         # if the layer has a next layer, add it to the string representation
         if self.next is not None:
             text += " + " + repr(self.next)
@@ -615,16 +615,16 @@ class DenseLayer(Layer):
         :return: the outputs of the layer
         """
         # initialise the list of pre-activations of all neurons in the layer
-        layer_pre_activations = []
+        layer_pre_activations: list[list[float]] = []
         gradients: list[list[float]] | None = None
         # for each neuron in the layer
         for neuron_inputs in layer_inputs:
             # initialise the list of pre-activations of the neuron
-            neuron_pre_activations = []
+            neuron_pre_activations: list[float] = []
             # for each output of the neuron
             for output in range(self.outputs):
                 # calculate the pre-activation of the neuron
-                pre_activation = (
+                pre_activation: float = (
                     sum(
                         neuron_inputs[input] * self.weights[output][input]
                         for input in range(self.inputs)
@@ -644,14 +644,14 @@ class DenseLayer(Layer):
         # if alpha is not None
         if alpha is not None:
             # initialise the list of gradients of the layer
-            gradients = []
+            gradients: list[list[float]] = []
 
             # for each neuron in the layer and its received gradients
             for neuron_inputs, received_gradient in zip(
                 layer_inputs, received_gradients
             ):
                 # calculate the gradient for each input of the neuron
-                gradient = [
+                gradient: list[float] = [
                     sum(
                         self.weights[output][input] * received_gradient[output]
                         for output in range(self.outputs)
@@ -686,8 +686,11 @@ class DenseLayer(Layer):
         :param inputs: the number of inputs of the layer
         """
         self.inputs = inputs
-        xavier = math.sqrt(6 / (inputs + self.outputs))
+        # calculate the xavier initialisation constant
+        xavier: float = math.sqrt(6 / (inputs + self.outputs))
+        # if the weights have not been initialised yet
         if self.weights is None:
+            # initialise the weights
             self.weights = [
                 [random.uniform(-xavier, xavier) for _ in range(inputs)]
                 for _ in range(self.outputs)
@@ -722,7 +725,7 @@ class ActivationLayer(Layer):
         Returns a string representation of the activation layer.
         :return: string representation of the activation layer
         """
-        text = (
+        text: str = (
             f"ActivationLayer(inputs={self.inputs}, outputs={self.outputs}, activation={self.activation.__name__},"
             f" name={repr(self.name)})"
         )
@@ -743,16 +746,16 @@ class ActivationLayer(Layer):
         :return: the outputs of the layer
         """
         # initialise the list of post-activations of all neurons in the layer
-        layer_post_activations = []
+        layer_post_activations: list[list[float]] = []
         gradients: list[list[float]] | None = None
         # for each list of pre-activations for each neuron in the layer
         for neuron_pre_activations in layer_inputs:
             # initialise the list of post-activations of the neuron
-            neuron_post_activations = []
+            neuron_post_activations: list[float] = []
             # for each output of the neuron
             for output in range(self.outputs):
                 # calculate the post-activation of the neuron
-                post_activation = self.activation(neuron_pre_activations[output])
+                post_activation: float = self.activation(neuron_pre_activations[output])
                 # add the post-activation to the list of post-activations of the neuron
                 neuron_post_activations.append(post_activation)
             # add the list of post-activations of the neuron to the list of post-activations of all neurons in the layer
@@ -768,7 +771,7 @@ class ActivationLayer(Layer):
         # if alpha is not None
         if alpha is not None:
             # initialise the list of gradients
-            gradients = []
+            gradients: list[list[float]] = []
 
             # for each list of pre-activations for each neuron in the layer and each list of received gradients
             for neuron_pre_activation, received_gradient in zip(
@@ -810,7 +813,7 @@ class LossLayer(Layer):
         Returns a string representation of the loss layer.
         :return: string representation of the loss layer
         """
-        text = f"LossLayer(inputs={self.inputs}, loss={self.loss.__name__}, name={repr(self.name)})"
+        text: str = f"LossLayer(inputs={self.inputs}, loss={self.loss.__name__}, name={repr(self.name)})"
         # if the layer has a next layer, add it to the string representation
         if self.next is not None:
             text += " + " + repr(self.next)
@@ -828,16 +831,16 @@ class LossLayer(Layer):
         :param targets: the expected outcomes of the network
         :return: the outputs of the layer
         """
-        predictions = layer_inputs
-        losses = None
-        gradients = None
+        predictions: list[list[float]] = layer_inputs
+        losses: list[float] | None = None
+        gradients: list[list[float]] | None = None
 
         if targets is not None:
-            losses = []
+            losses: list[float] = []
             # for each prediction and target
             for prediction, target in zip(predictions, targets):
                 # calculate the loss
-                loss = sum(
+                loss: float = sum(
                     self.loss(prediction[output], target[output])
                     for output in range(self.inputs)  # self.inputs == self.outputs
                 )
@@ -846,9 +849,9 @@ class LossLayer(Layer):
 
             # if alpha is not None, calculate the gradient
             if alpha is not None:
-                gradients = []
+                gradients: list[list[float]] = []
                 for prediction, target in zip(predictions, targets):
-                    gradient = [
+                    gradient: list[float] = [
                         derivative(self.loss)(prediction[output], target[output])
                         for output in range(self.inputs)
                     ]
