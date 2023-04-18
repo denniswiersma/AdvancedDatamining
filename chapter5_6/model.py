@@ -2,7 +2,7 @@ import math
 import random
 from collections import Counter
 from copy import deepcopy
-from typing import Callable
+from typing import Callable, Dict
 
 
 class Perceptron:
@@ -638,30 +638,92 @@ class InputLayer(Layer):
         mean_loss = sum(losses) / len(losses)
         return mean_loss
 
-    def partial_fit(self, inputs, targets, alpha=0.001) -> None:
+    def partial_fit(
+        self, inputs, targets, *, alpha=0.001, batch_size: int = None
+    ) -> float:
         """
         Partially fits the input layer to the given inputs and targets.
         :param inputs: a list of inputs containing a list of values for each input
         :param targets: a list of target values for each input
         :param alpha: the learning rate
+        :param batch_size:
         """
-        self(inputs, targets, alpha)
+        # if the batch size is not given, use the whole dataset, otherwise known as full batch learning
+        if batch_size is None:
+            batch_size = len(inputs)
 
-    def fit(self, inputs, targets, *, alpha=0.001, epochs: int = 100) -> None:
+        # initialise the list of losses for a given epoch
+        epoch_losses = []
+
+        # loop over the size in segments of the batch size
+        for i in range(0, len(inputs), batch_size):
+            # get the inputs and targets for the current batch
+            batch_inputs = inputs[i : i + batch_size]
+            batch_targets = targets[i : i + batch_size]
+
+            # call the input layer with the current batch
+            _, batch_losses, _ = self(batch_inputs, batch_targets, alpha)
+            # add the losses of the current batch to the list of losses for the epoch
+            epoch_losses.extend(batch_losses)
+
+        # calculate the mean loss of the epoch
+        mean_loss = sum(epoch_losses) / len(epoch_losses)
+
+        return mean_loss
+
+    def fit(
+        self,
+        inputs,
+        targets,
+        *,
+        alpha=0.001,
+        epochs: int = 100,
+        validation_data: tuple[list[list[float]], list[list[float]]] = None,
+        batch_size: int = None,
+    ) -> dict[str, list]:
         """
         Fully fits the neuron to the given inputs and targets.
         :param alpha: the learning rate
         :param inputs: a list of inputs containing a list of values for each input
         :param targets: a list of target values for each input
         :param epochs: the number of epochs to train the neuron for
+        :param validation_data: a tuple containing the validation inputs and targets
+        :param batch_size: the size of the batches to use for training
         """
+        # initialise the history of the neuron with an empty list of losses
+        history: dict[str, list] = {"loss": []}
+
+        # initialise the validation loss if validation data is given
+        if validation_data is not None:
+            history["val_loss"] = []
+
         # loop through the given number of epochs
         for epoch in range(epochs):
-            # train the perceptron for one epoch
-            self.partial_fit(inputs, targets, alpha=alpha)
+            # pair the inputs and targets together
+            input_target_pairs = list(zip(inputs, targets))
+            # shuffle the pairs
+            shuffled_pairs = random.sample(input_target_pairs, len(input_target_pairs))
+            # unpack the pairs
+            shuffled_inputs, shuffled_targets = zip(*shuffled_pairs)
+            # train the network for one epoch on the shuffled inputs and targets and append the loss to the history
+            history["loss"].append(
+                self.partial_fit(
+                    shuffled_inputs,
+                    shuffled_targets,
+                    alpha=alpha,
+                    batch_size=batch_size,
+                )
+            )
+
+            if validation_data is not None:
+                # evaluate the network on the validation data and append the loss to the history
+                history["val_loss"].append(
+                    self.evaluate(validation_data[0], validation_data[1])
+                )
 
             # print the number of performed epochs
         print(f"Finished after {epochs} epochs.")
+        return history
 
     def set_inputs(self, inputs: int) -> None:
         """
