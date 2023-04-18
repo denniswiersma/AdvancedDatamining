@@ -254,6 +254,42 @@ def softmax(pre_activation: list[float]) -> list[float]:
     return [math.exp(value) / denominator for value in normalised_pre_activation]
 
 
+def sigmoid(pre_activation: float) -> float:
+    """
+    Applies the sigmoid activation function to the given pre-activation value.
+    :param pre_activation: the pre-activation value
+    :return: the post-activation value
+    """
+    return 1 / (1 + pseudo_log(-pre_activation))
+
+
+def softplus(pre_activation: float) -> float:
+    """
+    Applies the softplus activation function to the given pre-activation value.
+    :param pre_activation: the pre-activation value
+    :return: the post-activation value
+    """
+    return pseudo_log(1 + pseudo_log(pre_activation))
+
+
+def relu(pre_activation: float) -> float:
+    """
+    Applies the rectified linear unit activation function to the given pre-activation value.
+    :param pre_activation: the pre-activation value
+    :return: the post-activation value
+    """
+    return max(pre_activation, 0)
+
+
+def swish(pre_activation: float) -> float:
+    """
+    Applies the swish activation function to the given pre-activation value.
+    :param pre_activation: the pre-activation value
+    :return: the post-activation value
+    """
+    return pre_activation * sigmoid(pre_activation)
+
+
 ### Loss functions ###
 def mean_squared_error(prediction: float, target: float):
     """
