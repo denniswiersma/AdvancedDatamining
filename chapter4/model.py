@@ -224,6 +224,15 @@ def tanh(pre_activation: float) -> float:
     return math.tanh(pre_activation)
 
 
+def softsign(pre_activation: float) -> float:
+    """
+    Applies the softsign activation function to the given pre-activation value.
+    :param pre_activation: the pre-activation value
+    :return: the post-activation value
+    """
+    return pre_activation / (1 + abs(pre_activation))
+
+
 ### Loss functions ###
 def mean_squared_error(prediction: float, target: float):
     """
