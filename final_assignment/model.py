@@ -297,6 +297,20 @@ def swish(pre_activation: float) -> float:
     return pre_activation * sigmoid(pre_activation)
 
 
+def hard_tanh(pre_activation: float) -> float:
+    """
+    Applies the hard tanh activation function to the given pre-activation value.
+    :param pre_activation: the pre-activation value
+    :return: the post-activation value
+    """
+    if pre_activation < -1:
+        return -1
+    elif pre_activation > 1:
+        return 1
+    else:
+        return pre_activation
+
+
 ### Loss functions ###
 def mean_squared_error(prediction: float, target: float):
     """
