@@ -430,7 +430,7 @@ def progress(epoch: int, epochs: int, start_time: float, width: int = 40) -> Non
     progress.last_epoch_time = current_time
 
     # calculate the percentage of epochs that have been completed
-    percent = (epoch + 1) / epochs * 100
+    percent = epoch / epochs * 100
 
     # calculate how wide the progress bar should be
     left = int(width * percent / 100)
@@ -804,8 +804,9 @@ class InputLayer(Layer):
                 history["val_loss"].append(
                     self.evaluate(validation_data[0], validation_data[1])
                 )
-
-            # print the number of performed epochs
+        # print the progress bar with the current epoch, elapsed time and time taken for the last epoch
+        progress(epochs, epochs, start_time)
+        # print the number of performed epochs
         print(f"\nFinished after {epochs} epochs.")
         return history
 
