@@ -285,7 +285,7 @@ def relu(pre_activation: float) -> float:
     :param pre_activation: the pre-activation value
     :return: the post-activation value
     """
-    return max(pre_activation, 0)
+    return max(0.0, pre_activation)
 
 
 def swish(pre_activation: float) -> float:
