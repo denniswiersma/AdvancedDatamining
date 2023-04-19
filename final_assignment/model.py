@@ -260,7 +260,10 @@ def sigmoid(pre_activation: float) -> float:
     :param pre_activation: the pre-activation value
     :return: the post-activation value
     """
-    return 1 / (1 + pseudo_log(-pre_activation))
+    try:
+        return 1 / (1 + math.exp(-pre_activation))
+    except OverflowError:
+        return 1.0
 
 
 def softplus(pre_activation: float, limit: int = 20) -> float:
