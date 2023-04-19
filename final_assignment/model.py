@@ -1,5 +1,6 @@
 import math
 import random
+import time
 from collections import Counter
 from copy import deepcopy
 from typing import Callable
@@ -394,6 +395,61 @@ def derivative(function: callable, delta: float = 0.01) -> callable:
     return wrapper_derivative
 
 
+def progress(epoch: int, epochs: int, start_time: float, width: int = 40) -> None:
+    """
+    Prints a progress bar to the console.
+    :param epoch: the current epoch
+    :param epochs: the total number of epochs
+    :param start_time: the time when the training started
+    :param width: the width of the progress bar
+    """
+    # get the current time and calculate the elapsed time
+    current_time = time.time()
+    elapsed_time = current_time - start_time
+    # calculate the elapsed time in minutes and seconds
+    elapsed_minutes, elapsed_seconds = divmod(elapsed_time, 60)
+    # format the elapsed time as a string
+    elapsed_str = f"{int(elapsed_minutes):02d}:{int(elapsed_seconds):02d}"
+
+    # if the epoch is not the first epoch
+    if epoch > 0:
+        # get the time of the last epoch and calculate the elapsed time
+        last_epoch_time = getattr(progress, "last_epoch_time", current_time)
+        epoch_elapsed_time = current_time - last_epoch_time
+        # calculate the elapsed time in minutes and seconds
+        epoch_elapsed_minutes, epoch_elapsed_seconds = divmod(epoch_elapsed_time, 60)
+        # format the elapsed time as a string
+        epoch_elapsed_str = (
+            f"{int(epoch_elapsed_minutes):02d}:{int(epoch_elapsed_seconds):02d}"
+        )
+    # if the epoch is the first epoch, set the elapsed time to 00:00
+    else:
+        epoch_elapsed_str = "00:00"
+
+    # save the current time as the time of the last epoch
+    progress.last_epoch_time = current_time
+
+    # calculate the percentage of epochs that have been completed
+    percent = (epoch + 1) / epochs * 100
+
+    # calculate how wide the progress bar should be
+    left = int(width * percent / 100)
+    right = width - left
+
+    # calculate the number of tags and spaces to print
+    tags = "#" * left
+    spaces = " " * right
+
+    # format the percentage as a string
+    percents = f"{percent:.0f}%"
+
+    print(
+        f"\rPerforming epoch {epoch + 1}/{epochs} [{tags}{spaces}] {percents} | Total time: {elapsed_str} | Last epoch: {epoch_elapsed_str}",
+        end="",
+        flush=True,
+    )
+
+
 class Neuron:
     """
     Implementation of a single neuron.
@@ -718,14 +774,21 @@ class InputLayer(Layer):
         if validation_data is not None:
             history["val_loss"] = []
 
+        # get the start time of the training
+        start_time = time.time()
+
         # loop through the given number of epochs
         for epoch in range(epochs):
+            # print the progress bar with the current epoch, elapsed time and time taken for the last epoch
+            progress(epoch, epochs, start_time)
+
             # pair the inputs and targets together
             input_target_pairs = list(zip(inputs, targets))
             # shuffle the pairs
             shuffled_pairs = random.sample(input_target_pairs, len(input_target_pairs))
             # unpack the pairs
             shuffled_inputs, shuffled_targets = zip(*shuffled_pairs)
+
             # train the network for one epoch on the shuffled inputs and targets and append the loss to the history
             history["loss"].append(
                 self.partial_fit(
@@ -743,7 +806,7 @@ class InputLayer(Layer):
                 )
 
             # print the number of performed epochs
-        print(f"Finished after {epochs} epochs.")
+        print(f"\nFinished after {epochs} epochs.")
         return history
 
     def set_inputs(self, inputs: int) -> None:
